@@ -18,6 +18,6 @@ def main(args):
       iplist = load_csv()
       name = args.get("ip_addresses")
       print(ip_addresses)
-      return {"ip_addresses": greeting}
+      return {"ip_addresses": ip_addresses}
 
 print(load_csv())
