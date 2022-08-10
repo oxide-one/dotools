@@ -14,13 +14,13 @@
         Check if an IP Address is owned by DigitalOcean
       </h1>
 
-      <div class="field">
+      <div class="field" style="height: 100%;">
         <label class="label">IP Address(s)</label>
         <div class="control">
-          <textarea class="textarea" placeholder="Please enter the IP addresses here, either comma separated or one on each line :)"></textarea>
+          <textarea id="ip-range" class="textarea" placeholder="Please enter the IP addresses here, one on each line :)"></textarea>
         </div>
       </div>
-      <button class="button">Submit</button>
+      <button class="button" id="submit">Submit</button>
     </div>
     
   </section>
@@ -32,5 +32,8 @@
       </p>
     </div>
   </footer>
+  <script src="index.js"></script>
+
   </body>
+  
 </html>
