@@ -80,6 +80,7 @@ def find_range(ipaddress, ipnetworks: list):
 def main(args):
       ipnetworks = load_csv()
       ipaddresses = args.get("ipaddresses")
+      print(args)
       return {
                 "statusCode" : HTTPStatus.OK,
                 "body" : {                    
