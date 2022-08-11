@@ -15,7 +15,7 @@ def make_ip(ipaddress, is_private:bool=False, is_do:bool=False, ipnetwork:dict={
         postcode = ipnetwork['postcode']
     else:
         in_range, country, city, postcode = "","","",""
-    
+    print("Got to here")
     return {
         "ip_address": str(ipaddress),
         "is_private": is_private,
@@ -54,6 +54,7 @@ def match_ips(ipaddresses: list, ipnetworks: list) -> list:
 
     }
     """
+    print(f"IP addresses from query (match_ips): {ipaddresses}, type {type(ipaddresses)}")
     data = []
     # Iterate over every IP address in the list
     for ipaddress_raw in ipaddresses:
@@ -66,7 +67,6 @@ def match_ips(ipaddresses: list, ipnetworks: list) -> list:
             continue
         is_do,matching_ipnetwork = find_range(ipaddress, ipnetworks)
         data.append(make_ip(ipaddress,is_do=is_do,ipnetwork=matching_ipnetwork))
-    print(data)
     return data   
 
 def find_range(ipaddress, ipnetworks: list):
@@ -79,26 +79,13 @@ def find_range(ipaddress, ipnetworks: list):
 
 def main(args):
       ipnetworks = load_csv()
-      ipaddresses = args.get("ipaddresses")
-      print(args)
+      ipaddresses = args.get("ipaddresses").split(',')
+      print(f"IP addresses from query: {ipaddresses}")
+      retvar = match_ips(ipaddresses,ipnetworks)
+      print(retvar)
       return {
                 "statusCode" : HTTPStatus.OK,
                 "body" : {                    
-                    "ipaddresses": match_ips(ipaddresses,ipnetworks)
+                    "ipaddresses": retvar
                 }
             }    
-
-# if __name__=='__main__':
-#     import json
-#     print(json.dumps(main({
-#         'ip_addresses': [
-#             "10.0.0.1",
-#             "10.0.0.2",
-#             "10.0.0.3/24",
-#             "207.154.234.246",
-#             "test",
-#             "1.2",
-#             "104.248.30.121", "138.197.181.112", "142.93.98.30", "157.230.111.64", "157.230.19.101", "157.230.21.105", "157.230.29.144", "159.89.21.4", "159.89.3.43", "164.92.162.166",
-#             "8.8.8.8"
-#         ]
-#     })))

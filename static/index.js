@@ -12,15 +12,14 @@ function makeDisabled() {
 function readForm() {
     const ipaddresses = document.getElementById('ip-range').value.split('\n');
     console.log(ipaddresses);
-    postData('https://faas-lon1-917a94a7.doserverless.co/api/v1/web/fn-111dca7f-cdef-4c89-a919-000f8b442a48/api/ip-check', ipaddresses)
+    postData('https://do-is-ip.oxide.one/fn/api/ip-check', ipaddresses)
     .then((data) => {
-      console.log(data); // JSON data parsed by `data.json()` call
+      tableCreate(data); // JSON data parsed by `data.json()` call
     });
 }
 
-
 // Example POST method implementation:
-async function postData(url = 'https://faas-lon1-917a94a7.doserverless.co/api/v1/web/fn-111dca7f-cdef-4c89-a919-000f8b442a48/api/ip-check' , ipaddresses) {
+async function postData(url , ipaddresses) {
     var query_str_url = url + '?' + new URLSearchParams({
         ipaddresses: ipaddresses,
     })
@@ -40,6 +39,42 @@ async function postData(url = 'https://faas-lon1-917a94a7.doserverless.co/api/v1
     });
     return await response.json(); // parses JSON response into native JavaScript objects
   }
+
+function tableCreate(data) {
+    const body = document.getElementById("submit-area");
+    var table = document.createElement('table');
+    // Set the class name
+    table.className = "table"
+    // Create the header
+    var header = table.createTHead();
+    var row = header.insertRow(0);
+    var cell = row.insertCell(0);
+    row.innerHTML = `
+    <th>IP Address</th>
+    <th>Private IP</th>
+    <th>DigitalOcean IP</th>
+    <th>IP Range</th>
+    <th>Country</th>
+    <th>City</th>
+    <th>Postcode</th>
+    `; 
+    for (var i = 0; i < data.ipaddresses.length; i++){
+        const tr = table.insertRow();
+        var ip_info = data.ipaddresses[i]
+        tr.innerHTML = `
+        <td>${ip_info.ip_address}</td>
+        <td>${ip_info.is_private}</td>
+        <td>${ip_info.is_do}</td>
+        <td>${ip_info.in_range}</td>
+        <td>${ip_info.country}</td>
+        <td>${ip_info.city}</td>
+        <td>${ip_info.postcode}</td>
+        `
+    }
+    body.replaceWith(table);
+  }
+  
+
   
 
   
