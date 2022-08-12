@@ -58,6 +58,7 @@ def match_ips(ipaddresses: list, ipnetworks: list) -> list:
     data = []
     # Iterate over every IP address in the list
     for ipaddress_raw in ipaddresses:
+        ipaddress_raw = ipaddress_raw.strip()
         try:
             ipaddress = ip_address(ipaddress_raw)
         except ValueError as e:
