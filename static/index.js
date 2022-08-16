@@ -12,7 +12,7 @@ function makeDisabled() {
 function readForm() {
     const ipaddresses = document.getElementById('ip-range').value.split('\n');
     console.log(ipaddresses);
-    postData('https://do-is-ip.oxide.one/fn/api/ip-check', ipaddresses)
+    postData('/fn/api/ip-check', ipaddresses)
     .then((data) => {
       tableCreate(data); // JSON data parsed by `data.json()` call
     });

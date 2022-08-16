@@ -1,0 +1,24 @@
+domains:
+- domain: dotools.oxide.one
+  type: PRIMARY
+functions:
+- github:
+    branch: main
+    deploy_on_push: true
+    repo: oxide-one/dotools
+  name: dotools
+  routes:
+  - path: /fn
+  source_dir: /
+name: dotools
+region: lon
+static_sites:
+- environment_slug: html
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: oxide-one/dotools
+  name: dotools
+  routes:
+  - path: /
+  source_dir: static
