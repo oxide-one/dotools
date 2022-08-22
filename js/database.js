@@ -1,4 +1,5 @@
 const do_url = "https://api.digitalocean.com/v2"
+var full_schema
 var redis_schema
 var mysql_schema
 var postgres_schema
@@ -97,11 +98,54 @@ async function selectDatabaseCluster(uuid,engine) {
 }
 
 
+function lookupRef(obj, path) {
+  for (var i=0, path=path.split('/'), len=path.length; i<len; i++){
+      obj = obj[path[i]];
+  };
+  return obj;
+};
+
+
+function constructValueField(key, field, schema) {
+  //console.log(field, schema)
+  // Unwrap #ref
+  if ("$ref" in schema) {
+    schema = lookupRef(full_schema, schema["$ref"].substring(2));
+  }
+  if (field == null) {
+    field = ""
+  }
+  switch (schema.type) {
+    case "string":
+      console.log("string");
+      return `<input class="input" type="text" value="${field}">`
+    case "integer":
+      console.log("integer");
+      return `<input class="input" type="number" value="${field}">`
+    case "number":
+      console.log("number");
+      return `<input class="input" type="number" value="${field}">`
+    case "object":
+      console.log("object");
+      break;
+    case "boolean":
+      console.log("boolean");
+      return `
+      <input type="radio" id="${key}_true" name="${field}" value="true">
+      <label for="true">True</label><br>
+      <input type="radio" id="${key}_false" name="${field}" value="false">
+      <label for="false">False</label><br>
+      `
+    default:
+      console.log(schema);
+      break;
+
+  }
+}
 
 function constructPostgresTable(config, schema) {
   results_listing = document.getElementById("results-listing")
   results_listing.innerHTML = ""
-  console.log(schema)
   const keys = Object.keys(schema.properties);
   const keys_length = keys.length
   for (let i = 0; i < keys.length; i++) {
@@ -109,6 +153,7 @@ function constructPostgresTable(config, schema) {
     const key_val = config.config[key];
     const key_schema = schema.properties[key]
     const field = document.createElement("div")
+    var value_field = constructValueField(key, key_val, key_schema)
     field.className="field"
     field.innerHTML = `
     <div class="columns">
@@ -123,7 +168,7 @@ function constructPostgresTable(config, schema) {
     <div class="column is-two-fifths">
     </div>
     <div class="column is-one-fifth">
-    <input class="input" type="text" value="${key_val}">
+    ${value_field}
     </div>
     </div>
     <p class="is-size-6 has-text-weight-light">${key_schema.description}</p>
@@ -135,6 +180,7 @@ function constructPostgresTable(config, schema) {
 }
 
 async function getAccDetails(token) {
+  console.log("Fetching account details")
   const url = `${do_url}/account`
   const response = await fetch(url, {
     method: 'GET', // *GET, POST, PUT, DELETE, etc.
@@ -147,23 +193,20 @@ async function getAccDetails(token) {
   account_details = await response.json(); 
   var return_message = document.getElementById('return-message')
   if (!response.ok) {
-      return_message.innerHTML = `
-      <article class="message is-danger">
-      <div class="message-body">
-      ${account_details.message}
-      </div>
-      </article>
-    `
+      bulmaToast.toast({
+        message: account_details.message,
+        type: 'is-danger',
+        dismissible: true,
+        animate: { in: 'fadeIn', out: 'fadeOut' },
+      })
     return false;
   } else {
-    return_message.innerHTML = `
-    <article class="message is-primary">
-    <div class="message-body">
-    <strong>Email:</strong> ${account_details.account.email}<br>
-    <strong>Team:</strong> ${account_details.account.team.name}
-    </div>
-    </article>
-    `
+    bulmaToast.toast({
+      message: `email: ${account_details.account.email}, team: ${account_details.account.team.name}`,
+      type: 'is-primary',
+      dismissible: true,
+      animate: { in: 'fadeIn', out: 'fadeOut' },
+    })
     return true;
   };
 }
@@ -171,10 +214,10 @@ async function getAccDetails(token) {
 getDOSpec()
   .then((data) => {
     try {
-        const doc = jsyaml.load(data);
-        mysql_schema = doc.components.schemas.mysql;
-        postgres_schema = doc.components.schemas.postgres;
-        redis_schema = doc.components.schemas.redis;
+        full_schema = jsyaml.load(data);
+        mysql_schema = full_schema.components.schemas.mysql;
+        postgres_schema = full_schema.components.schemas.postgres;
+        redis_schema = full_schema.components.schemas.redis;
     } catch (e) {
 
         console.log(e);
