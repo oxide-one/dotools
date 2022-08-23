@@ -1,22 +1,49 @@
+
+
 const do_url = "https://api.digitalocean.com/v2"
 var full_schema
 var redis_schema
 var mysql_schema
 var postgres_schema
-async function getDOSpec() {
-    // DigitalOcean Public Spec
-    const url = 'https://api-engineering.nyc3.cdn.digitaloceanspaces.com/spec-ci/DigitalOcean-public.v2.yaml';
-    const response = await fetch(url, {
-      method: 'GET', // *GET, POST, PUT, DELETE, etc.
-      headers: {
-        'Accept': 'binary/octet-stream'
-      },
-    });
-    return response.text(); // parses JSON response into native JavaScript objects
-  }
 
 var databases
+var database_uuid
+var content = document.getElementById("main-content");
+
+function removeContent(is_end) {
+  if (content.classList.contains('animate__fadeOut')) {
+    content.innerHTML = "";
+    content.classList.remove('animate__animated', 'animate__fadeOut', 'animate__faster')
+    content.removeEventListener('animationend', removeContent)
+  }
+
+}
+
+// Fade out content when that view is completed
+function fadeOutContent() {
+  content.classList.add('animate__animated', 'animate__fadeOut', 'animate__faster');
+  content.addEventListener('animationend', () => {
+    removeContent(true)
+  });
+}
+
+
+// Fetch the DigitalOcean API spec.
+async function getDOSpec() {
+  // DigitalOcean Public Spec
+  const url = 'https://api-engineering.nyc3.cdn.digitaloceanspaces.com/spec-ci/DigitalOcean-public.v2.yaml';
+  const response = await fetch(url, {
+    method: 'GET', // *GET, POST, PUT, DELETE, etc.
+    headers: {
+      'Accept': 'binary/octet-stream'
+    },
+  });
+  return response.text(); // parses JSON response into native JavaScript objects
+}
+
+// List the DO Databases and create a table
 async function listDODatabases(token) {
+  // Set the URL to access the Database endpoint
   const url = `${do_url}/databases`;
   const response = await fetch(url, {
     method: 'GET', // *GET, POST, PUT, DELETE, etc.
@@ -26,21 +53,28 @@ async function listDODatabases(token) {
     },
   });
   databases = await response.json();
-  document.getElementById("database-listing").innerHTML = `
-  <table class="table is-fullwidth" id="database-table">
-  <thead>
-  <tr>
-    <th>Name</th>
-    <th>Region</th>
-    <th>Status</th>
-    <th>Engine</th>
-    <th>Version</th>
-    <th>Tags</th>
-  </tr>
-</thead>
-<tbody id="database-table-tbody">
-</tbody>
-</table>
+  // Create a table
+  content.innerHTML = `
+  <div class="container animate__animated animate__fadeIn">
+    <h1 class="title">
+      Please select a Database Cluster
+    </h1>
+  
+    <table class="table is-fullwidth" id="database-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Region</th>
+          <th>Status</th>
+          <th>Engine</th>
+          <th>Version</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody id="database-table-tbody">
+      </tbody>
+    </table>
+    </div>
   `;
   var database_table = document.getElementById("database-table-tbody")
   
@@ -58,15 +92,14 @@ async function listDODatabases(token) {
       tags = tags + `<span class="tag">${database_cluster_info.tags[x]}</span> `
     };
 
-
     var row = database_table.insertRow();
     row.innerHTML = `
-    <td><button class="button is-link is-inverted" onclick="selectDatabaseCluster('${database_cluster_info.id}','${database_cluster_info.engine}')"><strong>${database_cluster_info.name}</strong></button></td>
-    <td>${database_cluster_info.region}</td>
-    <td>${database_cluster_info.status}</td>
-    <td>${database_cluster_info.engine}</td>
-    <td>${database_cluster_info.version}</td>
-    <td>${tags}</td>
+      <td><button class="button is-link is-inverted" onclick="selectDatabaseCluster('${database_cluster_info.id}','${database_cluster_info.engine}')"><strong>${database_cluster_info.name}</strong></button></td>
+      <td>${database_cluster_info.region}</td>
+      <td>${database_cluster_info.status}</td>
+      <td>${database_cluster_info.engine}</td>
+      <td>${database_cluster_info.version}</td>
+      <td>${tags}</td>
     `;
 
   } 
@@ -74,9 +107,9 @@ async function listDODatabases(token) {
 
 
 async function selectDatabaseCluster(uuid,engine) {
+  database_uuid = uuid
   console.log(`Fetching cluster information for ${uuid}`);
-  var database_table = document.getElementById("database-table")
-  database_table.innerHTML = ""
+  fadeOutContent()
   const url = `${do_url}/databases/${uuid}/config`
   const response = await fetch(url, {
     method: 'GET', // *GET, POST, PUT, DELETE, etc.
@@ -144,8 +177,11 @@ function constructValueField(key, field, schema) {
 }
 
 function constructPostgresTable(config, schema) {
-  results_listing = document.getElementById("results-listing")
-  results_listing.innerHTML = ""
+  content.innerHTML = `
+  <div class="container animate__animated animate__fadeIn" id="config-options">
+  </div>
+  `
+  config_options = document.getElementById('config-options')
   const keys = Object.keys(schema.properties);
   const keys_length = keys.length
   for (let i = 0; i < keys.length; i++) {
@@ -157,25 +193,29 @@ function constructPostgresTable(config, schema) {
     field.className="field"
     field.innerHTML = `
     <div class="columns">
-    <div class="column is-two-fifths">
-    <p class="is-family-code">
-    ${key}
-    </p>
-    <p class="has-text-weight-light is-size-6">
-    <strong>Type:</strong> ${key_schema.type}
-    </p>
+      <div class="column is-one-fifth"></div>
+      <div class="column is-two-fifths">
+        <p class="is-size-4 is-family-code">
+        ${key}
+        </p>
+        <p class="has-text-weight-light is-size-6">
+        <strong>Type:</strong> ${key_schema.type}
+        </p>
+      </div>
+      <div class="column is-one-fifth">
+        ${value_field}
+      </div>
+    <div class="column is-one-fifth"></div>
     </div>
-    <div class="column is-two-fifths">
+    <div class="columns">
+      <div class="column is-one-fifth"></div>
+      <div class="column is-three-fifths">
+        <p class="is-size-6 has-text-weight-light">${key_schema.description}</p>
+      </div>
+      <div class="column is-one-fifth"></div>
     </div>
-    <div class="column is-one-fifth">
-    ${value_field}
-    </div>
-    </div>
-    <p class="is-size-6 has-text-weight-light">${key_schema.description}</p>
-
-    
     `
-    results_listing.appendChild(field);
+    config_options.appendChild(field);
   }
 }
 
@@ -244,6 +284,7 @@ function chainThrough() {
   getAccDetails(api_id_value).then((success) => {
     if (success) {
       console.log("Successful")
+      fadeOutContent()
       listDODatabases(api_id_value)
     } else {
       console.log("Unsuccessful")

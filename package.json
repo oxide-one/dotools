@@ -13,15 +13,20 @@
     "type": "git",
     "url": "git+https://github.com/oxide-one/dotools.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "okamidash",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/oxide-one/dotools/issues"
   },
   "homepage": "https://github.com/oxide-one/dotools#readme",
   "devDependencies": {
     "bulma": "^0.9.4",
-    "node-sass": "^7.0.1"
+    "del": "^7.0.0",
+    "gulp": "^4.0.2",
+    "gulp-nunjucks": "^5.1.0",
+    "gulp-sass": "^5.1.0",
+    "node-sass": "^7.0.1",
+    "sass": "^1.54.5"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4"

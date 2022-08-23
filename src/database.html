@@ -1,0 +1,52 @@
+{% extends "template/base.html" %}
+
+{% block head %}
+<title>Database Parameter Editor</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.0.0/animate.min.css"/>
+{% endblock %}
+
+{% block main %}
+<div class="container has-text-centered animate__animated animate__fadeIn">
+    <h1 class="title">
+        Database Parameter Editor
+    </h1>
+    <p class="subtitle">
+        Configure <strong>advanced</strong> parameters for DigitalOcean database clusters
+    </p>
+    <p class="pb-1">
+        First, we'll need your <a href="https://docs.digitalocean.com/reference/api/create-personal-access-token/">API Token.</a>
+    </p>
+
+
+            <div class="content">
+                <p class="control has-icons-left">
+                    <input id="api-id" class="input" type="password" placeholder="API Token" size="15">
+                    <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                    </span>
+                </p>
+            </div>
+ 
+
+            <article class="message is-warning" id="warning-message">
+                <div class="message-header">
+                <p>Disclaimer</p>
+                <button class="delete" aria-label="delete" id="warning-button"></button>
+                </div>
+                <div class="message-body">
+                This is not endorsed, supported, maintained or created by DigitalOcean.
+                While it <i>is</i> created by a current employee, we do not retain any liability for usage of this tool.
+                The code for this is open source and fully clientside (except for connections to DigitalOcean)
+    
+                </div>
+            </article>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+<script src="https://unpkg.com/bulma-toast@2.4.1/dist/bulma-toast.min.js"></script>
+<script src="./js/database.js"></script>
+{% endblock %}

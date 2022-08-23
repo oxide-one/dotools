@@ -48,7 +48,7 @@ function tableCreate(data) {
     // Create the header
     var header = table.createTHead();
     var row = header.insertRow(0);
-    var cell = row.insertCell(0);
+  var cell = row.insertCell(0);
     row.innerHTML = `
     <th>IP Address</th>
     <th>Private IP</th>
