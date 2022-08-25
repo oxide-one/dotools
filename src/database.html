@@ -6,6 +6,8 @@
 {% endblock %}
 
 {% block main %}
+<div class="container columns animate__animated animate__fadeIn">
+<div class="column is-one-fifth"></div>
 <div class="container has-text-centered animate__animated animate__fadeIn">
     <h1 class="title">
         Database Parameter Editor
@@ -18,9 +20,9 @@
     </p>
 
 
-            <div class="content">
+            <div class="content field">
                 <p class="control has-icons-left">
-                    <input id="api-id" class="input" type="password" placeholder="API Token" size="15">
+                    <input id="api-id" class="input is-expanded" type="password" placeholder="API Token">
                     <span class="icon is-small is-left">
                     <i class="fas fa-lock"></i>
                     </span>
@@ -42,6 +44,8 @@
             </article>
 
     </div>
+</div>
+<div class="column is-one-fifth"></div>
 </div>
 {% endblock %}
 

@@ -9,7 +9,7 @@ var postgres_schema
 var databases
 var database_uuid
 var content = document.getElementById("main-content");
-
+var current_page = 1
 function removeContent(is_end) {
   if (content.classList.contains('animate__fadeOut')) {
     content.innerHTML = "";
@@ -122,11 +122,13 @@ async function selectDatabaseCluster(uuid,engine) {
   database_cluster_config = await response.json()
   if (engine == "pg") {
     console.log("Postgres Engine")
-    constructPostgresTable(database_cluster_config, postgres_schema)
+    constructDatabaseOptionsTable(database_cluster_config, postgres_schema)
   } else if (engine == "redis") {
     console.log("Redis Engine")
+    constructDatabaseOptionsTable(database_cluster_config, redis_schema)
   } else if (engine == "mysql") {
     console.log("MySQL engine")
+    constructDatabaseOptionsTable(database_cluster_config, mysql_schema)
   }
 }
 
@@ -140,7 +142,6 @@ function lookupRef(obj, path) {
 
 
 function constructValueField(key, field, schema) {
-  //console.log(field, schema)
   // Unwrap #ref
   if ("$ref" in schema) {
     schema = lookupRef(full_schema, schema["$ref"].substring(2));
@@ -150,24 +151,45 @@ function constructValueField(key, field, schema) {
   }
   switch (schema.type) {
     case "string":
-      console.log("string");
-      return `<input class="input" type="text" value="${field}">`
+      if (schema.maxLength > 100) {
+        return `<textarea class="textarea is-medium">${field}</textarea>`
+      } else {
+        return `<input class="input" type="text" value="${field}">`
+      }
+      
     case "integer":
-      console.log("integer");
       return `<input class="input" type="number" value="${field}">`
     case "number":
-      console.log("number");
       return `<input class="input" type="number" value="${field}">`
     case "object":
-      console.log("object");
       break;
     case "boolean":
-      console.log("boolean");
+
+      if (field == true) {
+        options = `
+        <option></option>
+        <option selected>True</option>
+        <option>False</option
+        `
+      } else if (field == false) {
+        options = `
+        <option></option>
+        <option>True</option>
+        <option selected>False</option
+        `
+      } else {
+        options = `
+        <option selected></option>
+        <option>True</option>
+        <option>False</option
+        `
+      }
       return `
-      <input type="radio" id="${key}_true" name="${field}" value="true">
-      <label for="true">True</label><br>
-      <input type="radio" id="${key}_false" name="${field}" value="false">
-      <label for="false">False</label><br>
+      <div class="select">
+        <select id="${key}">
+          ${options}
+        </select>
+      </div>
       `
     default:
       console.log(schema);
@@ -176,47 +198,169 @@ function constructValueField(key, field, schema) {
   }
 }
 
-function constructPostgresTable(config, schema) {
+function splitArrayIntoChunks(property_keys, database_schema) {
+  let nested_keys = [], arr = [], regular_keys = []
+  for (let i = 0; i < property_keys.length; i++) {
+    let property = property_keys[i]
+    let schema = database_schema[property]
+    if ("$ref" in schema) {
+      //schema = lookupRef(full_schema, schema["$ref"].substring(2));
+      nested_keys.push(property)
+    } else {
+      arr.push(property)
+    }
+  }
+  while((x = arr.splice(0, 7)).length) regular_keys.push(x)
+  // Code readability is for suckas
+  if (regular_keys[regular_keys.length - 1].length == 1) {
+    regular_keys[regular_keys.length - 2].push(regular_keys[regular_keys.length - 1].pop())
+    regular_keys.pop()
+  }
+  return {regular_keys, nested_keys}
+}
+
+function setPage(pagenum) {
+  // Find the A link and remove it's class
+  var current_page_a = document.getElementById(`page ${current_page}`);
+  current_page_a.classList.remove("is-current");
+  current_page_a.ariaCurrent = false;
+  // Find the div and make invisible
+  var current_page_div = document.getElementById(current_page);
+  current_page_div.style.display = "none";
+
+
+  // Find the new page A and add the class
+  var new_page_a = document.getElementById(`page ${pagenum}`);
+  new_page_a.classList.add("is-current");
+  new_page_a.ariaCurrent = "page";
+  // Find the div and make invisible
+  var new_page_div = document.getElementById(pagenum);
+  new_page_div.style.display = "";
+
+  current_page = pagenum
+
+}
+
+function addDatabaseTab(pagenum, hidden) {
+  // Create a page on the thingy dingy
+  const pagination_page = document.createElement("li")
+  pagination_page.innerHTML = `
+  <a class="pagination-link control" id="page ${pagenum}" aria-label="Goto page ${pagenum}" onclick=setPage("${pagenum}")>${pagenum}</a>
+  `
+
+  // Create a div to hold this
+  const key_set_div = document.createElement("div");
+  key_set_div.id = pagenum;
+  
+  // Hide if not the first set
+  if (hidden) {
+    key_set_div.style.display = "none";
+  }
+
+  return {pagination_page, key_set_div}
+  
+}
+
+function addDatabaseItem(key, key_val, key_schema) {
+  // Create a div within the key_set_div
+  const key_div = document.createElement("div");
+  // Set the class of this div
+  key_div.className="field";
+
+  const key_input_field = constructValueField(key, key_val, key_schema);
+  key_div.innerHTML = `
+    <label class="label">${key}</label>
+    <div class="control">
+      ${key_input_field}
+    </div>
+    <p class="help">${key_schema.description}</p>
+  `;
+  return key_div
+}
+
+function constructDatabaseOptionsTable(config, schema) {
   content.innerHTML = `
-  <div class="container animate__animated animate__fadeIn" id="config-options">
+  <div class="container columns animate__animated animate__fadeIn">
+  <div class="column is-one-fifth"></div>
+  <div class="column">
+
+  <nav class="pagination" role="navigation" aria-label="pagination">
+    <ul class="pagination-list field is-grouped is-grouped-centered" id="pagination-list">
+    </ul>
+  </nav>
+  <div id="config-options"></div>
+  <div class="field pt-4 is-grouped is-grouped-centered">
+  <p class="control">
+    <a class="button is-primary">
+      Submit
+    </a>
+  </p>
+  <p class="control">
+    <a class="button is-danger">
+      Cancel
+    </a>
+  </p>
+</div>
+  </div>
+  <div class="column is-one-fifth"></div>
   </div>
   `
   config_options = document.getElementById('config-options')
+  pagination_list = document.getElementById('pagination-list')
   const keys = Object.keys(schema.properties);
   const keys_length = keys.length
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
-    const key_val = config.config[key];
-    const key_schema = schema.properties[key]
-    const field = document.createElement("div")
-    var value_field = constructValueField(key, key_val, key_schema)
-    field.className="field"
-    field.innerHTML = `
-    <div class="columns">
-      <div class="column is-one-fifth"></div>
-      <div class="column is-two-fifths">
-        <p class="is-size-4 is-family-code">
-        ${key}
-        </p>
-        <p class="has-text-weight-light is-size-6">
-        <strong>Type:</strong> ${key_schema.type}
-        </p>
-      </div>
-      <div class="column is-one-fifth">
-        ${value_field}
-      </div>
-    <div class="column is-one-fifth"></div>
-    </div>
-    <div class="columns">
-      <div class="column is-one-fifth"></div>
-      <div class="column is-three-fifths">
-        <p class="is-size-6 has-text-weight-light">${key_schema.description}</p>
-      </div>
-      <div class="column is-one-fifth"></div>
-    </div>
-    `
-    config_options.appendChild(field);
+  // Split the array up into equal chunks
+  // regular_keys = [[key_name(7)],[key_name(7)]]
+  // nested_keys = ["key_name", "key_name"]
+  let {regular_keys, nested_keys} = splitArrayIntoChunks(keys, schema.properties);
+  
+  // Iterate over each set of arrays
+  for (let x = 0; x < regular_keys.length; x++) {
+    var {pagination_page, key_set_div} = addDatabaseTab(x + 1, x != 0)
+    let key_set = regular_keys[x]
+    pagination_list.appendChild(pagination_page)
+
+    // Iterate over each key within this key set
+    for (let y = 0; y < key_set.length; y++) {
+      let key = key_set[y]
+      key_set_div.appendChild(addDatabaseItem(key, config.config[key], schema.properties[key]));
+    }
+    config_options.appendChild(key_set_div)
   }
+  // Iterate over each of the nested keys
+  for (let x = 0; x < nested_keys.length; x++) {
+    let nested_key = nested_keys[x]
+
+    var {pagination_page, key_set_div} = addDatabaseTab(nested_key, true)
+    let dereferenced_schema = lookupRef(full_schema, schema.properties[nested_key]["$ref"].substring(2))
+    let key_set = Object.keys(dereferenced_schema.properties)
+
+    pagination_list.appendChild(pagination_page)
+    // Iterate over each key within this key set
+    for (let y = 0; y < key_set.length; y++) {
+      let key = key_set[y]
+      key_set_div.appendChild(addDatabaseItem(key, config.config[nested_key][key], dereferenced_schema.properties[key]));
+    }
+    config_options.appendChild(key_set_div)
+  }
+  setPage(1)
+
+  // for (let i = 0; i < keys.length; i++) {
+  //   const key = keys[i];
+  //   const key_val = config.config[key];
+  //   const key_schema = schema.properties[key]
+  //   const field = document.createElement("div")
+  //   var value_field = constructValueField(key, key_val, key_schema)
+  //   field.className="field"
+  //   field.innerHTML = `
+  //     <label class="label">${key}</label>
+  //     <div class="control">
+  //       ${value_field}
+  //     </div>
+  //     <p class="help">${key_schema.description}</p>
+  //   `
+  //   config_options.appendChild(field);
+  // }
 }
 
 async function getAccDetails(token) {
